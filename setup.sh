@@ -1,19 +1,20 @@
 #!/bin/bash
 
 clear
+
 echo "==================================================================================================="
 echo "---------------------------------------------------------------------------------------------------"
 echo "                                                                                                   "
-echo "                                             ((                                                    "
-echo "                                            ((((                                                   "
-echo "                                            ((((                                                   "
-echo "            ,***********        /(((((((((((((((     (((((((((((         (((((((((((               "
-echo "          *****      *****    (((((((  ,((((((((  (((((((   (((((((    ((((((*  (((((((            "
-echo "         ****          ****  (((((         ((((( (((((         ((((( ,((((          ((((           "
-echo "        *****           **** ((((           (((( ((((           (((( ((((           ((((           "
-echo "         ****          ***** ((((          *(((( ((((           (((( (((((          ((((           "
-echo "          *****      ******   (((((      /(((((   (((((/     .(((((   ((((((      (((((            "
-echo "            *************       (((((((((((((       (((((((((((((       (((((((((((((              "
+echo "                                             dd                                                    "
+echo "                                            dddd                                                   "
+echo "                                            dddd                                                   "
+echo "             OOOOOOOOOOO         ddddddddddddddd     OOOOOOOOOOO         OOOOOOOOOOO               "
+echo "          OOOOO      OOOOO    ddddddd   dddddddd  OOOOOOO   OOOOOOO    OOOOOOO  OOOOOOO            "
+echo "         OOOO          OOOO  ddddd         ddddd OOOOO         OOOOO  OOOO          OOOO           "
+echo "        OOOOO           OOOO dddd           dddd OOOO           OOOO OOOO           OOOO           "
+echo "         OOOO          OOOOO dddd           dddd OOOO           OOOO OOOOO          OOOO           "
+echo "          OOOOO      OOOOOO   ddddd       ddddd   OOOOO       OOOOO   OOOOOO      OOOOO            "
+echo "            OOOOOOOOOOOOO       ddddddddddddd       OOOOOOOOOOOOO       OOOOOOOOOOOOO              "
 echo "                                                                                                   "
 echo "                        Odoo Development Environment Setup for Pycharm                             "
 echo "---------------------------------------------------------------------------------------------------"
@@ -26,14 +27,18 @@ echo "----= this script later to setup your venvs.                          =---
 echo "----=                                                                 =----------------------------"
 echo "----===================================================================----------------------------"
 echo "---------------------------------------------------------------------------------------------------"
-echo "----= Affirmative answers should be y. Empty answers are considered negative. =--------------------"
+# echo "----= Affirmative answers should be y. Empty answers are considered negative. =--------------------"
 echo "---------------------------------------------------------------------------------------------------"
-if [ "$WSL_DISTRO_NAME" ]; then
-echo "---------------------------------------------------------------------------------------------------"
-echo "----= $WSL_DISTRO_NAME on WSL2 was detected...                                  =----------------------------"
-echo "---------------------------------------------------------------------------------------------------"
-install_wsl="y"
-win_hostname="$(powershell.exe '[Console]::Write($env:COMPUTERNAME)').local"
+if [[ "$WSL_DISTRO_NAME" ]] && [[ $(uname -r | grep -n 'WSL2') ]]; then
+    install_wsl="y"
+    win_hostname="$(powershell.exe '[Console]::Write($env:COMPUTERNAME)').local"
+    echo "---------------------------------------------------------------------------------------------------"
+    echo "----= $WSL_DISTRO_NAME on WSL2 was detected...                                  =----------------------------"
+    echo "---------------------------------------------------------------------------------------------------"
+elif [[ "$WSL_DISTRO_NAME" ]];
+then
+    echo "WSL1 is not supported. Please upgrade to WSL2."
+    exit 0
 fi
 
 read -p "Do you wish to setup new or existing projects? [y/n] " install_project
@@ -75,7 +80,7 @@ then
         read -p "Enable git Credential Manager? (recommended) [y/n] " install_git_cred
     fi
 
-    read -p "Do you wish to install systemd on WSL? (experimental) [y/n] " install_systemd
+    # read -p "Do you wish to install systemd on WSL? (experimental) [y/n] " install_systemd
     read -p "Reset PyCharm firewall rules? [y/n] " install_reset_pycharm
     
     if [[ ! $(git config --global core.eol) == lf ]];
@@ -159,9 +164,12 @@ fi
 if [[ $install_postgres == "y" ]]
 then
 echo "Installing Postgres 12..."
-sudo wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - 
-echo "Setup Postgres repo..."
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+if [[ ! -f /etc/apt/sources.list.d/pgdg.list ]]
+then
+    sudo wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - 
+    echo "Setup Postgres repo..."
+    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+fi
 echo "Installing..."
 sudo apt -y install postgresql-12 postgresql-client-12
 
@@ -197,17 +205,29 @@ then
         exit 1
     fi
     echo "Installing nginx..."
-    sudo apt install -y nginx git
+    sudo apt install -y nginx
+    
+    sudo service nginx restart
+    
+
+    if [[ $install_wsl == "y" ]] && [[ ! -f /etc/wsl.conf ]];
+    then
+        # If WSL and no wsl.conf exists, create one to start nginx service on boot.
+        sudo bash -c 'cat >> /etc/wsl.conf <<EOL
+[boot]
+command="service nginx restart;"
+EOL'
+    fi
 
     echo "Adding apt repository for python version..."
-    sudo add-apt-repository ppa:deadsnakes/ppa
+    sudo add-apt-repository -y ppa:deadsnakes/ppa
     if [[ $? -ne 0 ]]; then
         echo "Failed to add apt-repository for python..."
         exit 1
     fi
 
     echo "Installing python 3.8..."
-    sudo apt-get install python3.8 python3.8-dev python3.8-venv build-essential
+    sudo apt-get -y install python3.8 python3.8-dev python3.8-venv build-essential
     if [[ $? -ne 0 ]]; then
         echo "Failed to install Python 3.8..."
         exit 1
@@ -227,17 +247,21 @@ then
     fi
 
     echo "Installing wkhtmltopdf 0.12.6..."
-    if [[ $DISTRIB_RELEASE == '20.04' ]]
-    then
-        wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
-        sudo apt install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb
-    elif [[ $DISTRIB_RELEASE == '18.04' ]]
-    then
-        wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb
-        sudo apt install -y ./wkhtmltox_0.12.6-1.bionic_amd64.deb
-    else
-        echo "Unable to install wkhtmltopdf. Please do this manually."
-    fi
+    # if [[ $DISTRIB_RELEASE == '20.04' ]]
+    # then
+    wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.$(lsb_release -cs)_amd64.deb
+    sudo apt install -y ./wkhtmltox_0.12.6-1.$(lsb_release -cs)_amd64.deb
+    if [[ $? -ne 0 ]]; then
+        read -p "Unable to install wkhtmltopdf. Please do this manually."
+        
+    fi 
+    # elif [[ $DISTRIB_RELEASE == '18.04' ]]
+    # then
+    #     wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb
+    #     sudo apt install -y ./wkhtmltox_0.12.6-1.bionic_amd64.deb
+    # else
+    #     echo "Unable to install wkhtmltopdf. Please do this manually."
+    # fi
 
     read -p "Do you need Python 2.7? (optional) [y/n] " install_py27
     if [[ $install_py27 == "y" ]]
@@ -323,49 +347,9 @@ then
         echo "---------------------------------------------------------------------------------------------------"
         read -p "Enter the client name with camel case (no spaces): (ie. ClientName or CN) " project_client
         read -p "Enter a lowercase shortname for the client. (ie. client) " project_shortname
-        read -p "Set password for Odoo Database Manager (web/database/manager): [default: Development] " project_admin_password && [[ -z "$project_admin_password" ]] && project_admin_password="$default_admin_pass"
-        read -p "Use custom XMLRPC and longpolling ports for this project? [y/n] " project_custom_ports
-        project_xmlrpc="8069"
-        project_longpolling="8072"
-        if [[ $project_custom_ports == "y" ]]
-        then
-            read -p "XMLRPC Port: " project_xmlrpc
-            read -p "Longpolling Port: " project_longpolling
-        fi
-
-        echo "================= Database Settings ==============================================================="
-        echo "Where will the database for this project be hosted? "
-        echo "      1. This machine (localhost) "
-        echo "      2. Another machine or virtual machine on my network "
-        echo "      3. Configure manually later "
-        if [[ $install_wsl == "y" ]]
-        then
-            echo "      4. This machine (on Windows) "
-        fi
-        default_postgres_option="1"
-        read -p "Enter the option number: [default: 1] " postgres_option && [[ -z "$postgres_option" ]] && postgres_option="$default_postgres_option"
-
-        if [[ $postgres_option != "3" ]]
-        then
-            if [[ $postgres_option == '2' ]]
-            then
-                read -p "Database hostname: " postgres_hostname
-            elif [[ $postgres_option == '1' ]]
-            then
-                postgres_hostname="localhost"
-            elif [[ $postgres_option == "4" ]]
-            then
-                postgres_hostname=$win_hostname
-            fi
-            default_postgres_port="5432"
-            read -p "Database port [default: 5432]: " postgres_port && [[ -z "$postgres_port" ]] && postgres_port="$default_postgres_port"
-            read -p "Database user: " postgres_username
-            read -s -p "Database password: " postgres_password
-            echo ""
-        fi
-
         read -p "Enter the Odoo version number, including decimal: (ie 13.0) " project_version
-        # Create project directory structure.
+        
+                # Create project directory structure.
         if [[ ! -d ~/PycharmProjects ]]
         then
             mkdir ~/PycharmProjects
@@ -399,6 +383,50 @@ then
             if [[ $project_git_url ]]
             then
                 git ls-remote $project_git_url --quiet
+            fi
+        fi
+
+        if [[ $create_new_project ]];
+        then
+            read -p "Set password for Odoo Database Manager (web/database/manager): [default: Development] " project_admin_password && [[ -z "$project_admin_password" ]] && project_admin_password="$default_admin_pass"
+            read -p "Use custom XMLRPC and longpolling ports for this project? [y/n] " project_custom_ports
+            project_xmlrpc="8069"
+            project_longpolling="8072"
+            if [[ $project_custom_ports == "y" ]]
+            then
+                read -p "XMLRPC Port: " project_xmlrpc
+                read -p "Longpolling Port: " project_longpolling
+            fi
+
+            echo "================= Database Settings ==============================================================="
+            echo "Where will the database for this project be hosted? "
+            echo "      1. This machine (localhost) "
+            echo "      2. Another machine or virtual machine on my network "
+            echo "      3. Configure manually later "
+            if [[ $install_wsl == "y" ]]
+            then
+                echo "      4. This machine (on Windows) "
+            fi
+            default_postgres_option="1"
+            read -p "Enter the option number: [default: 1] " postgres_option && [[ -z "$postgres_option" ]] && postgres_option="$default_postgres_option"
+
+            if [[ $postgres_option != "3" ]]
+            then
+                if [[ $postgres_option == '2' ]]
+                then
+                    read -p "Database hostname: " postgres_hostname
+                elif [[ $postgres_option == '1' ]]
+                then
+                    postgres_hostname="localhost"
+                elif [[ $postgres_option == "4" ]]
+                then
+                    postgres_hostname=$win_hostname
+                fi
+                default_postgres_port="5432"
+                read -p "Database port [default: 5432]: " postgres_port && [[ -z "$postgres_port" ]] && postgres_port="$default_postgres_port"
+                read -p "Database user: " postgres_username
+                read -s -p "Database password: " postgres_password
+                echo ""
             fi
         fi
 
@@ -674,7 +702,7 @@ EOL
                 exit 1
             fi
         # elif [[ $project_version == "11.0" ]] || [[ $project_version == "12.0" ]] || [[ $project_version == "13.0" ]] || [[ $project_version == "14.0" ]];
-        elif [[ $project_version == "11.0" ]] || [[ $project_version == "12.0" ]];
+        elif [[ $project_version == "11.0" ]] || [[ $project_version == "12.0" ]] || [[ $project_version == "13.0" ]];
         then
             echo "Creating Python 3.7 venv."
             python3.7 -m venv ~/PycharmProjects/$project_dir/venv
@@ -697,6 +725,7 @@ EOL
             echo "Failed to activate venv..."
             exit 1
         fi
+        contents=""
         if [[ $install_wsl == "y" ]]
         then
             python_version=$(python --version)
@@ -729,7 +758,10 @@ EOL
 
             python_venv_path="$project_path/venv/bin/python"
             configuration_name="$python_version @ $WSL_DISTRO_NAME for $project_dir"
-            contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" DISTRIBUTION_ID=\"$WSL_DISTRO_NAME\" />\n\ \ \ \ </jdk>\n"
+            if [[ ! $(cat pycharm_jdk_path | grep -q configuration_name) ]];
+            then
+                contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" DISTRIBUTION_ID=\"$WSL_DISTRO_NAME\" />\n\ \ \ \ </jdk>\n"
+            fi
         else
             python_version=$(python --version)
             project_path="~/PycharmProjects/$project_dir"
@@ -758,7 +790,10 @@ EOL
 
             python_venv_path="\$USER_HOME\$/PycharmProjects/$project_dir/venv/bin/python"
             configuration_name="$python_version for $project_dir"
-            contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional ASSOCIATED_PROJECT_PATH=\"\$USER_HOME\$/PycharmProjects/$project_dir\" INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" />\n\ \ \ \ </jdk>\n"
+            if [[ ! $(cat pycharm_jdk_path | grep -q configuration_name) ]];
+            then
+                contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional ASSOCIATED_PROJECT_PATH=\"\$USER_HOME\$/PycharmProjects/$project_dir\" INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" />\n\ \ \ \ </jdk>\n"
+            fi
         fi
 
         # Create file if missing
@@ -792,9 +827,10 @@ EOL
         fi
     
         echo "Preparing Pycharm Idea and Odoo config files..."
-        echo "Creating .iml file at ~/PycharmProjects/$project_dir/.idea/$project_dir.iml"
-        if [[ $project_version != "9.0" ]] && [[ $project_version != "10.0" ]]
+        
+        if [[ $project_version != "9.0" ]] && [[ $project_version != "10.0" ]] && [[ ! -f ~/PycharmProjects/$project_dir/.idea/$project_dir.iml ]];
         then
+            echo "Creating .iml file at ~/PycharmProjects/$project_dir/.idea/$project_dir.iml"
             cat >> ~/PycharmProjects/$project_dir/.idea/$project_dir.iml <<EOL
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
@@ -814,7 +850,9 @@ EOL
   </component>
 </module>
 EOL
-        else
+        elif [[ ! -f ~/PycharmProjects/$project_dir/.idea/$project_dir.iml ]];
+        then
+            echo "Creating .iml file at ~/PycharmProjects/$project_dir/.idea/$project_dir.iml"
             cat >> ~/PycharmProjects/$project_dir/.idea/$project_dir.iml <<EOL
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
@@ -832,11 +870,13 @@ EOL
   </component>
 </module>
 EOL
-            fi
+        fi
 
-        echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_single.xml"
-        mkdir ~/PycharmProjects/$project_dir/.idea/runConfigurations
-        cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_single.xml <<EOL
+        if [[ ! -f ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_single.xml ]];
+        then
+            echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_single.xml"
+            mkdir ~/PycharmProjects/$project_dir/.idea/runConfigurations
+            cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_single.xml <<EOL
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Odoo $version - Single Worker" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="false">
     <module name="$project_dir" />
@@ -862,8 +902,11 @@ EOL
   </configuration>
 </component>
 EOL
-        echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin.xml"
-        cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin.xml <<EOL
+        fi
+        if [[ ! -f ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin.xml ]]
+        then
+            echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin.xml"
+            cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin.xml <<EOL
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Odoo $version" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="false">
     <module name="$project_dir" />
@@ -889,8 +932,11 @@ EOL
   </configuration>
 </component>
 EOL
-        echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_test.xml"
-        cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_test.xml <<EOL
+        fi
+        if [[ ! -f ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_test.xml ]]
+        then
+            echo "Creating debug configurations for Pycharm in ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_test.xml"
+            cat >> ~/PycharmProjects/$project_dir/.idea/runConfigurations/odoo_bin_test.xml <<EOL
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Odoo $version - Init Test" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="false">
     <module name="$project_dir" />
@@ -916,8 +962,11 @@ EOL
   </configuration>
 </component>
 EOL
-        echo "Creating .xml file at ~/PycharmProjects/$project_dir/.idea/modules.xml"
-        cat >> ~/PycharmProjects/$project_dir/.idea/modules.xml <<EOL
+        fi
+        if [[ ! -f ~/PycharmProjects/$project_dir/.idea/modules.xml ]]
+        then
+            echo "Creating .xml file at ~/PycharmProjects/$project_dir/.idea/modules.xml"
+            cat >> ~/PycharmProjects/$project_dir/.idea/modules.xml <<EOL
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectModuleManager">
@@ -927,6 +976,7 @@ EOL
   </component>
 </project>
 EOL
+        fi
         echo "Installing requirements into venv..."
         pip install wheel pydevd-odoo
     
@@ -971,37 +1021,7 @@ EOL
             echo "Requirements failed to install correctly..."
             exit 1
         else
-            if [[ -f ~/PycharmProjects/$project_dir/$project_addons/setup.sh ]];
-            then
-                export project_dir
-                export project_shortname
-                export project_addons
-                read -p "Found setup.sh in project's addons. Press ENTER to continue..."
-                chmod +x setup.sh
-                ~/PycharmProjects/$project_dir/$project_addons/setup.sh
-            fi
-
-            echo "---------------------------------------------------------------------------------------------------"
-            echo "==================================================================================================="
-            echo "---------------------------------------------------------------------------------------------------"
-            echo " Your project is setup with the following directory structure. "
-            echo " "
-            echo " ~/PycharmProjects "
-            echo " |- $project_dir                  # Main Project Directory" 
-            echo "   |- $project_addons             # Addons Directory"
-            echo "   |- configs                     # conf files"
-            echo "     |- nginx.conf                # Nginx site config"
-            echo "     |- odoo-server.conf "
-            echo "     |- odoo-server-workers.conf "
-            echo "     |- test-server.conf "
-            echo "   |- venv                        # venv "
-            echo " |- shared                        # Shared repositores "
-            echo "   |- v$project_version "
-            echo "     |- odoo              "
-            echo "     |- enterprise        "
-            echo "     |- odoo-stubs        "
-            echo "---------------------------------------------------------------------------------------------------"
-            echo "==================================================================================================="
+            
             
             if [[ $install_wsl == "y" ]];
             then
@@ -1022,27 +1042,27 @@ EOL
                         read -p "Press ENTER to continue..."
                         echo "After you have added the record to your Windows hosts file, you'll be able to"
                         echo "access Odoo via http://$project_shortname.odoo.test"
-                        echo "Ensure nginx is running by using this command:"
-                        echo " "
-                        echo "sudo service nginx restart"
-                        read -p "Press ENTER to continue..."
+                        # echo "Ensure nginx is running by using this command:"
+                        # echo " "
+                        # echo "sudo service nginx restart"
+                        # read -p "Press ENTER to continue..."
                     else
                         echo "Hostname added to Windows hosts file..."
                         echo "You can access your local Odoo dev environment via "
                         echo "http://$project_shortname.odoo.test"
                         echo ""
-                        echo "Ensure nginx is running by using this command:"
-                        echo " "
-                        echo "sudo service nginx restart"
+                        # echo "Ensure nginx is running by using this command:"
+                        # echo " "
+                        # echo "sudo service nginx restart"
                         read -p "Press ENTER to continue..."
                     fi
                 else
                     echo "You can access your local Odoo dev environment via "
                     echo "http://$project_shortname.odoo.test"
                     echo ""
-                    echo "Ensure nginx is running by using this command:"
-                    echo " "
-                    echo "sudo service nginx restart"
+                    # echo "Ensure nginx is running by using this command:"
+                    # echo " "
+                    # echo "sudo service nginx restart"
                     read -p "Press ENTER to continue..."
                 fi
 
@@ -1073,20 +1093,67 @@ EOL
                     echo "You can access your local Odoo dev environment via "
                     echo "http://$project_shortname.odoo.test"
                     echo ""
-                    echo "Ensure nginx is running by using this command:"
-                    echo " "
-                    echo "sudo service nginx restart"
+                    read -p "Press ENTER to continue..."
+                    # echo "Ensure nginx is running by using this command:"
+                    # echo " "
+                    # echo "sudo service nginx restart"
                 else
                     echo "You can access your local Odoo dev environment via "
                     echo "http://$project_shortname.odoo.test"
                     echo ""
-                    echo "Ensure nginx is running by using this command:"
-                    echo " "
-                    echo "sudo service nginx restart"
+                    # echo "Ensure nginx is running by using this command:"
+                    # echo " "
+                    # echo "sudo service nginx restart"
+                    read -p "Press ENTER to continue..."
                 fi
             fi
+
+            if [[ -f ~/PycharmProjects/$project_dir/$project_addons/setup.sh ]];
+            then
+                export project_dir
+                export project_shortname
+                export project_addons
+                export project_version
+                export version
+                export postgres_hostname
+                export postgres_port
+                export postgres_username
+                export postgres_password
+                
+
+                echo ""
+                echo ""
+                echo ""
+                read -p "Found setup.sh in project's addons. Press ENTER to continue setting up project specific dependencies..."
+                chmod +x setup.sh
+                ~/PycharmProjects/$project_dir/$project_addons/setup.sh
+            fi
+
             # Ensure owner of the project directory is the current user.
             sudo chown -R $(id -u):$(id -g) ~/PycharmProjects/$project_dir
+            
+            echo "---------------------------------------------------------------------------------------------------"
+            echo "==================================================================================================="
+            echo "---------------------------------------------------------------------------------------------------"
+            echo " Your project is setup with the following directory structure. "
+            echo " "
+            echo " ~/PycharmProjects "
+            echo " |- $project_dir                  # Main Project Directory" 
+            echo "   |- $project_addons             # Addons Directory"
+            echo "   |- configs                     # conf files"
+            echo "     |- nginx.conf                # Nginx site config"
+            echo "     |- odoo-server.conf "
+            echo "     |- odoo-server-workers.conf "
+            echo "     |- test-server.conf "
+            echo "   |- venv                        # venv "
+            echo " |- shared                        # Shared repositores "
+            echo "   |- v$project_version "
+            echo "     |- odoo              "
+            echo "     |- enterprise        "
+            echo "     |- odoo-stubs        "
+            echo "---------------------------------------------------------------------------------------------------"
+            echo "==================================================================================================="
+
             read -p "Setup another project? [y/n] " setup_another_project
             if [[ $setup_another_project != "y" ]];
             then
@@ -1097,10 +1164,16 @@ EOL
 fi
 
 echo "Setup complete, exiting..."
-
 # Windows related info.
 if [[ $install_wsl == "y" ]];
 then
+    if [[ $project_shortname ]]
+    then
+        echo "---------------------------------------------------------------------------------------------------"
+        echo "You can access your local Odoo dev environment via "
+        echo "http://$project_shortname.odoo.test"
+        echo ""
+    fi
     echo "---------------------------------------------------------------------------------------------------"
     echo "==================================================================================================="
     echo "==================================================================================================="
