@@ -161,23 +161,6 @@ then
     echo ""
 fi
 
-if [[ $install_postgres == "y" ]]
-then
-echo "Installing Postgres 12..."
-if [[ ! -f /etc/apt/sources.list.d/pgdg.list ]]
-then
-    sudo wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - 
-    echo "Setup Postgres repo..."
-    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
-fi
-echo "Installing..."
-sudo apt -y install postgresql-12 postgresql-client-12
-
-echo ""
-echo "Done!"
-echo ""
-fi
-
 if [[ $install_dep == "y" ]];
 then
     . /etc/lsb-release
@@ -187,7 +170,13 @@ then
 #     sudo bash -c 'cat >> /etc/sysctl.d/idea.conf <<EOL
 # fs.inotify.max_user_watches = 524288
 # EOL'
-    
+    if [[ ! -f /etc/apt/sources.list.d/pgdg.list ]]
+    then
+        sudo wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - 
+        echo "Setup Postgres repo..."
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ focal-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+    fi
+
     if [[ $? -ne 0 ]]; then
         echo "Failed to set system inotify variable..."
         exit 1
@@ -208,7 +197,6 @@ then
     sudo apt install -y nginx
     
     sudo service nginx restart
-    
 
     if [[ $install_wsl == "y" ]] && [[ ! -f /etc/wsl.conf ]];
     then
@@ -279,13 +267,25 @@ EOL'
         sudo npm install -g less
     fi
     
-    sudo apt install -y virtualenv
-
+    sudo apt install -y virtualenv python3-pypdf2 postgresql-client-12
+    
     echo ""
     echo "Done!"
     echo ""
     echo "Finished installing Python and build dependencies..."
     read -p "Press ENTER to continue..."
+fi
+
+if [[ $install_postgres == "y" ]]
+then
+echo "Installing Postgres 12..."
+
+echo "Installing..."
+sudo apt -y install postgresql-12
+
+echo ""
+echo "Done!"
+echo ""
 fi
 
 echo "Setup projects"
@@ -434,7 +434,7 @@ then
         then
             echo "Some project fields were not entered. Exiting..."
             exit 0
-        fi        
+        fi
 
         if [[ ! -d ~/PycharmProjects/shared/v$project_version/odoo ]]
         then
@@ -443,8 +443,24 @@ then
             echo "Fetching shared Odoo resources for $project_version..."
             echo "Cloning into ~/PycharmProjects/shared/v$project_version/odoo"
             git ls-remote https://github.com/odoo/odoo.git --quiet
-            git ls-remote https://github.com/odoo/enterprise.git --quiet
             git ls-remote https://github.com/odoo-ide/odoo-stubs.git --quiet
+
+            git ls-remote https://github.com/odoo/enterprise.git --quiet
+            if [[ $? -ne 0 ]]; then
+                echo "Failed to authenticate with Github..."
+                if [[ $install_wsl ]]
+                then
+                    echo "Please try deleting your github credentials from the Windows Credential Manager."
+                    echo "Press Start > type 'Credential Manager' > Under Windows Credentials, locate and "
+                    echo "delete credentials which may be conflicting."
+                fi
+                read -p "Press ENTER to try again."
+                git ls-remote https://github.com/odoo/enterprise.git --quiet
+                if [[ $? -ne 0 ]]; then
+                    read -p "Still failed to authenticate with github."
+                fi
+                exit 1
+            fi
 
             git clone --quiet https://github.com/odoo/odoo.git --depth 1 -b $project_version ~/PycharmProjects/shared/v$project_version/odoo &
             P1=$!
@@ -522,6 +538,8 @@ db_user = $postgres_username
 server_wide_modules=web
 xmlrpc_port = $project_xmlrpc
 log_level = info
+limit_time_cpu = 999999
+limit_time_real = 999999
 EOL
             echo "Creating .conf file at ~/PycharmProjects/$project_dir/configs/odoo-server-workers.conf"
             cat >> ~/PycharmProjects/$project_dir/configs/odoo-server-workers.conf <<EOL
@@ -725,6 +743,8 @@ EOL
             echo "Failed to activate venv..."
             exit 1
         fi
+        # Upgrade pip in venv
+        python -m pip install --upgrade pip
         contents=""
         if [[ $install_wsl == "y" ]]
         then
@@ -1068,6 +1088,7 @@ EOL
 
                 if [[ $postgres_option == "4" ]];
                 then
+                    # TODO: Setup postgres firewall rule with IP range to allow psql to connect to Windows.
                     echo "Checking firewall rules on Windows..."
                     wsl_inbound_firewall_rule=$(powershell.exe Get-NetFirewallRule -DisplayName \'WSL Inbound\' -ErrorAction SilentlyContinue)
                     wsl_postgres_firewall_rule=$(powershell.exe Get-NetFirewallRule -DisplayName \'PostgreSQL on $postgres_port\' -ErrorAction SilentlyContinue)
@@ -1153,7 +1174,7 @@ EOL
             echo "     |- odoo-stubs        "
             echo "---------------------------------------------------------------------------------------------------"
             echo "==================================================================================================="
-
+            
             read -p "Setup another project? [y/n] " setup_another_project
             if [[ $setup_another_project != "y" ]];
             then
