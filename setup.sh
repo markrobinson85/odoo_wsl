@@ -778,7 +778,7 @@ EOL
 
             python_venv_path="$project_path/venv/bin/python"
             configuration_name="$python_version @ $WSL_DISTRO_NAME for $project_dir"
-            if [[ ! $(cat pycharm_jdk_path | grep -q configuration_name) ]];
+            if [[ ! $(cat $pycharm_jdk_path | grep -q configuration_name) ]];
             then
                 contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" DISTRIBUTION_ID=\"$WSL_DISTRO_NAME\" />\n\ \ \ \ </jdk>\n"
             fi
@@ -810,7 +810,7 @@ EOL
 
             python_venv_path="\$USER_HOME\$/PycharmProjects/$project_dir/venv/bin/python"
             configuration_name="$python_version for $project_dir"
-            if [[ ! $(cat pycharm_jdk_path | grep -q configuration_name) ]];
+            if [[ ! $(cat $pycharm_jdk_path | grep -q configuration_name) ]];
             then
                 contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional ASSOCIATED_PROJECT_PATH=\"\$USER_HOME\$/PycharmProjects/$project_dir\" INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" />\n\ \ \ \ </jdk>\n"
             fi
