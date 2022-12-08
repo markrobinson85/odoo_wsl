@@ -997,8 +997,15 @@ EOL
 EOL
         fi
         echo "Installing requirements into venv..."
-        pip install wheel pydevd-odoo
-    
+        
+        if [[ $project_version == "8.0" ]] || [[ $project_version == "9.0" ]] || [[ $project_version == "10.0" ]];
+        then
+            # Older versions use Python 2.7 and won't work with latest pydevd.
+            pip install wheel pydevd-odoo==1.1
+        else
+            # Install wheel and pydevd-odoo into venv.
+            pip install wheel pydevd-odoo
+        fi
         if [[ -f ~/PycharmProjects/$project_dir/requirements.txt ]];
         then
             # If there is a requirements file in the project directory, use that instead of Odoo's
