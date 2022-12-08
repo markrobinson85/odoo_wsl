@@ -1002,6 +1002,9 @@ EOL
         then
             # Older versions use Python 2.7 and won't work with latest pydevd.
             pip install wheel pydevd-odoo==1.1
+
+            # less is required for old versions of Odoo.
+            sudo npm install -g less less-plugin-clean-css
         else
             # Install wheel and pydevd-odoo into venv.
             pip install wheel pydevd-odoo
