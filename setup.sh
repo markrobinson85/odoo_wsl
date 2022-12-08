@@ -66,7 +66,14 @@ then
         echo "If you recently installed git on Windows, you may need to restart your terminal or PC."
         exit 0
     fi
-
+    # if [[ $install_git_lf == "y" ]];
+    # then
+        echo "Force LF line endings in git."
+        git config --global core.eol lf
+        echo ""
+        echo "Done!"
+        echo ""
+    # fi
     # Check if git credential manager is configured for WSL.
     ask_git_cred="no"
     echo "WSL Configuration"
@@ -116,14 +123,6 @@ then
     echo ""
 fi
 
-# if [[ $install_git_lf == "y" ]];
-# then
-    echo "Force LF line endings in git."
-    git config --global core.eol lf
-    echo ""
-    echo "Done!"
-    echo ""
-# fi
 
 if [[ $install_systemd == "y" ]];
 then
@@ -1143,19 +1142,19 @@ EOL
                 ~/PycharmProjects/$project_dir/$project_addons/setup.sh
             fi
 
-        # Install requirements after running setup.sh. This is in case the setup.sh install dependancies.
-        if [[ -f ~/PycharmProjects/$project_dir/$project_addons/requirements.txt ]];
-        then
-            echo "Installing requirements found in project addons directory..."
-            sleep 10s
-            pip install -r ~/PycharmProjects/$project_dir/$project_addons/requirements.txt
-        fi
-        
-        if [[ $? -ne 0 ]]; 
-        then
-            echo "Requirements failed to install correctly..."
-            exit 1
-        else
+            # Install requirements after running setup.sh. This is in case the project's setup.sh installs dependancies.
+            if [[ -f ~/PycharmProjects/$project_dir/$project_addons/requirements.txt ]];
+            then
+                echo "Installing requirements found in project addons directory..."
+                sleep 10s
+                pip install -r ~/PycharmProjects/$project_dir/$project_addons/requirements.txt
+            fi
+            
+            if [[ $? -ne 0 ]]; 
+            then
+                echo "Requirements failed to install correctly..."
+                exit 1
+            fi
 
             # Ensure owner of the project directory is the current user.
             sudo chown -R $(id -u):$(id -g) ~/PycharmProjects/$project_dir
