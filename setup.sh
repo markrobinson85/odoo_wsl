@@ -743,8 +743,8 @@ EOL
             then
                 unset PYENV_VERSION
                 export PYENV_VERSION=3.7
-                echo "Creating Python 3 venv for macOS."
-                python3 -m venv ~/PycharmProjects/$project_dir/venv
+                echo "Creating Python $PYENV_VERSION venv for macOS."
+                python -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
                     exit 1
@@ -762,8 +762,8 @@ EOL
             then
                 unset PYENV_VERSION
                 export PYENV_VERSION=3.8
-                echo "Creating Python 3 venv for macOS."
-                python3 -m venv ~/PycharmProjects/$project_dir/venv
+                echo "Creating Python $PYENV_VERSION venv for macOS."
+                python -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
                     exit 1
