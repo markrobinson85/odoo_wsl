@@ -821,6 +821,10 @@ EOL
             then
                 contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" DISTRIBUTION_ID=\"$WSL_DISTRO_NAME\" />\n\ \ \ \ </jdk>\n"
             fi
+        elif [[ $OSTYPE == 'darwin'* ]];
+        then
+            echo "Pycharm options are not supported on macOS yet."
+         
         else
             python_version=$(python --version)
             project_path="~/PycharmProjects/$project_dir"
@@ -854,10 +858,11 @@ EOL
                 contents="\ \ \ <jdk version=\"2\">\n\ \ \ \ \ <name value=\"$configuration_name\" />\n\ \ \ \ \ <type value=\"Python SDK\" />\n\ \ \ \ \ <version value=\"$python_version\" />\n\ \ \ \ \ <homePath value=\"$python_venv_path\" />\n\ \ \ \ \ <roots>\n\ \ \ \ \ \ <classPath>\n\ \ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ \ </classPath>\n\ \ \ \ \ <sourcePath>\n\ \ \ \ \ <root type=\"composite\" />\n\ \ \ \ \ </sourcePath>\n\ \ \ \ \ </roots>\n\ \ \ \ \ <additional ASSOCIATED_PROJECT_PATH=\"\$USER_HOME\$/PycharmProjects/$project_dir\" INTERPRETER_PATH=\"$HOME/PycharmProjects/$project_dir/venv/bin/python\" HELPERS_PATH=\"\" INITIALIZED=\"false\" VALID=\"true\" RUN_AS_ROOT_VIA_SUDO=\"false\" SKELETONS_PATH=\"\" VERSION=\"\" />\n\ \ \ \ </jdk>\n"
             fi
         fi
-
-        # Create file if missing
-        if [[ $pycharm_jdk_path ]] && [[ ! -f $pycharm_jdk_path ]];
+        if [[ $OSTYPE != 'darwin'* ]];
         then
+        # Create file if missing
+            if [[ $pycharm_jdk_path ]] && [[ ! -f $pycharm_jdk_path ]];
+            then
             # If the file doesn't exist yet, create it.
             cat >> $pycharm_jdk_path <<EOL
 <application>
@@ -866,25 +871,25 @@ EOL
   </component>
 </application>
 EOL
-            # fix permissions of jdk.table.xml file.
-            if [[ $install_wsl ]]
-            then
-                sudo chmod 777 $pycharm_path/options/jdk.table.xml
+                # fix permissions of jdk.table.xml file.
+                if [[ $install_wsl ]]
+                then
+                    sudo chmod 777 $pycharm_path/options/jdk.table.xml
+                fi
             fi
-        fi
-        
-        # Check if the configuration with this name already exists.
-        if ! $(cat $pycharm_jdk_path | grep -q "<name value=\"$configuration_name\""); 
-        then
-            echo "Setting up Python interpreter in PyCharm..."
             
-            sudo sed -i -e "/^[[:space:]]*<\/component>[[:space:]]*$/i\ $contents" $pycharm_jdk_path
-            if [[ $install_wsl ]]
+            # Check if the configuration with this name already exists.
+            if ! $(cat $pycharm_jdk_path | grep -q "<name value=\"$configuration_name\""); 
             then
-                sudo chmod 777 $pycharm_path/options/jdk.table.xml
+                echo "Setting up Python interpreter in PyCharm..."
+                
+                sudo sed -i -e "/^[[:space:]]*<\/component>[[:space:]]*$/i\ $contents" $pycharm_jdk_path
+                if [[ $install_wsl ]]
+                then
+                    sudo chmod 777 $pycharm_path/options/jdk.table.xml
+                fi
             fi
         fi
-    
         echo "Preparing Pycharm Idea and Odoo config files..."
         if [[ $WSL_DISTRO_NAME ]];
         then
