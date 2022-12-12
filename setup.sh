@@ -886,7 +886,7 @@ EOL
         echo "Preparing Pycharm Idea and Odoo config files..."
         if [[ $WSL_DISTRO_NAME ]];
         then
-            pycharm_project_path="$pycharm_project_path"
+            pycharm_project_path="\\\\wsl\$\\$WSL_DISTRO_NAME$HOME/PycharmProjects/"
         else
             pycharm_project_path="$HOME/PycharmProjects/"
         fi
