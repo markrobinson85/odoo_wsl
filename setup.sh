@@ -1069,7 +1069,18 @@ EOL
             # Pycharm debugger.
             echo "Overriding requirements from Odoo and using project directory..."
             sleep 10s
-            pip install -r ~/PycharmProjects/$project_dir/requirements.txt
+            if [[ $OSTYPE == 'darwin'* ]];
+            then 
+                sudo sed -i -e "s/gevent==1.5.0/gevent==22.10.2/" requirements.txt
+                sudo sed -i -e "s/psycopg2==2.8.3/psycopg2==2.9.5/" requirements.txt
+                sudo sed -i -e "s/reportlab==3.5.13/reportlab==3.6.12/" requirements.txt
+                sudo sed -i -e "s/greenlet==0.4.15/greenlet==2.0.1/" requirements.txt
+                sudo sed -i -e "s/Pillow==5.4.1/Pillow==9.0.0/" requirements.txt
+
+                CFLAGS='-I/opt/homebrew/opt/zlib/include -L/opt/homebrew/opt/zlib/lib' arch -arm64 pip install -r requirements.txt
+            else
+                pip install -r ~/PycharmProjects/$project_dir/requirements.txt
+            fi
         else
             echo "Installing requirements from Odoo."
             sleep 10s
@@ -1080,8 +1091,9 @@ EOL
 
             echo "Downloading from $version_url..."
             # Download requirements.txt and overwrite existing file.
-            wget -O requirements.txt $version_url
-            
+            # wget -O requirements.txt $version_url
+            curl $version_url -o requirements.txt
+
             if [[ $? -ne 0 ]]; then
                 echo "Requirements file failed to download..."
                 exit 1
