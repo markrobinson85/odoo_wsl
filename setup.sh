@@ -724,10 +724,8 @@ EOL
         if [[ -d ~/PycharmProjects/$project_dir/venv ]]
         then
             echo "Removing existing venv to replace it..."
-            rm -R ~/PycharmProjects/$project_dir/venv
+            sudo rm -R ~/PycharmProjects/$project_dir/venv
         fi
-        # Upgrade pip in venv
-        python -m pip install --upgrade pip
 
         if [[ $project_version == "8.0" ]] || [[ $project_version == "9.0" ]] || [[ $project_version == "10.0" ]];
             then
