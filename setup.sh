@@ -684,13 +684,25 @@ server {
 EOL
         wait
 
-        if [[ ! -d /var/lib/nginx/cache ]]
-        then
-            sudo mkdir /var/lib/nginx/cache
-        fi
-        if [[ ! -d /var/lib/nginx/cache/$project_shortname ]]
-        then
-            sudo mkdir /var/lib/nginx/cache/$project_shortname
+        if [[ $OSTYPE == 'darwin'* ]];
+        then 
+            if [[ ! -d /usr/local/var/log/nginx/cache ]]
+            then
+                sudo mkdir /usr/local/var/log/nginx/cache
+            fi
+            if [[ ! -d /usr/local/var/log/nginx/cache/$project_shortname ]]
+            then
+                sudo mkdir /usr/local/var/log/nginx/cache/$project_shortname
+            fi
+        else
+            if [[ ! -d /var/lib/nginx/cache ]]
+            then
+                sudo mkdir /var/lib/nginx/cache
+            fi
+            if [[ ! -d /var/lib/nginx/cache/$project_shortname ]]
+            then
+                sudo mkdir /var/lib/nginx/cache/$project_shortname
+            fi
         fi
         
         echo "Adding hard link for nginx"
@@ -699,8 +711,13 @@ EOL
         # then
         #     rm ~/PycharmProjects/$project_dir/configs/nginx.conf
         # fi
-        sudo ln -f ~/PycharmProjects/$project_dir/configs/nginx.conf /etc/nginx/sites-enabled/$project_shortname.conf
-
+        if [[ $OSTYPE == 'darwin'* ]];
+        then
+            echo "Creating symlink for MacOS"
+            sudo ln -f ~/PycharmProjects/$project_dir/configs/nginx.conf /usr/local/etc/nginx/sites-enabled/$project_shortname.conf
+        else
+            sudo ln -f ~/PycharmProjects/$project_dir/configs/nginx.conf /etc/nginx/sites-enabled/$project_shortname.conf
+        fi
         # End of create project directory.
         fi
 
@@ -712,6 +729,7 @@ EOL
 
         if [[ $project_version == "8.0" ]] || [[ $project_version == "9.0" ]] || [[ $project_version == "10.0" ]];
             then
+            
             echo "Creating Python 2.7 venv."
             virtualenv --python=/usr/bin/python2.7 ~/PycharmProjects/$project_dir/venv
             if [[ $? -ne 0 ]]; then
@@ -721,18 +739,38 @@ EOL
         # elif [[ $project_version == "11.0" ]] || [[ $project_version == "12.0" ]] || [[ $project_version == "13.0" ]] || [[ $project_version == "14.0" ]];
         elif [[ $project_version == "11.0" ]] || [[ $project_version == "12.0" ]] || [[ $project_version == "13.0" ]];
         then
-            echo "Creating Python 3.7 venv."
-            python3.7 -m venv ~/PycharmProjects/$project_dir/venv
-            if [[ $? -ne 0 ]]; then
-                echo "Failed to create venv..."
-                exit 1
+            if [[ $OSTYPE == 'darwin'* ]];
+            then
+                echo "Creating Python 3 venv."
+                python3 -m venv ~/PycharmProjects/$project_dir/venv
+                if [[ $? -ne 0 ]]; then
+                    echo "Failed to create venv..."
+                    exit 1
+                fi
+            else
+                echo "Creating Python 3.7 venv."
+                python3.7 -m venv ~/PycharmProjects/$project_dir/venv
+                if [[ $? -ne 0 ]]; then
+                    echo "Failed to create venv..."
+                    exit 1
+                fi
             fi
         else
-            echo "Creating Python 3.8 venv."
-            python3.8 -m venv ~/PycharmProjects/$project_dir/venv
-            if [[ $? -ne 0 ]]; then
-                echo "Failed to create venv..."
-                exit 1
+            if [[ $OSTYPE == 'darwin'* ]];
+            then
+                echo "Creating Python 3 venv."
+                python3 -m venv ~/PycharmProjects/$project_dir/venv
+                if [[ $? -ne 0 ]]; then
+                    echo "Failed to create venv..."
+                    exit 1
+                fi
+            else
+                echo "Creating Python 3.8 venv."
+                python3.8 -m venv ~/PycharmProjects/$project_dir/venv
+                if [[ $? -ne 0 ]]; then
+                    echo "Failed to create venv..."
+                    exit 1
+                fi
             fi
         fi
 
