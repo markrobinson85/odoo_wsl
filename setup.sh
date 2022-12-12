@@ -726,6 +726,8 @@ EOL
             echo "Removing existing venv to replace it..."
             rm -R ~/PycharmProjects/$project_dir/venv
         fi
+        # Upgrade pip in venv
+        python -m pip install --upgrade pip
 
         if [[ $project_version == "8.0" ]] || [[ $project_version == "9.0" ]] || [[ $project_version == "10.0" ]];
             then
@@ -744,7 +746,7 @@ EOL
                 unset PYENV_VERSION
                 export PYENV_VERSION=3.7
                 echo "Creating Python $PYENV_VERSION venv for macOS."
-                pyenv virtualenv 3.7 ~/PycharmProjects/$project_dir/venv
+                python -m virtualenv venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
                     exit 1
@@ -763,7 +765,7 @@ EOL
                 unset PYENV_VERSION
                 export PYENV_VERSION=3.8
                 echo "Creating Python $PYENV_VERSION venv for macOS."
-                pyenv virtualenv 3.7 ~/PycharmProjects/$project_dir/venv
+                python -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
                     exit 1
