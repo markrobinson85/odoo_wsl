@@ -742,7 +742,7 @@ EOL
             if [[ $OSTYPE == 'darwin'* ]];
             then
                 unset PYENV_VERSION
-                export PYENV_VERSION=3.7.16
+                export PYENV_VERSION=3.8.16
                 echo "Creating Python $PYENV_VERSION venv for macOS."
                 python -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
@@ -761,7 +761,7 @@ EOL
             if [[ $OSTYPE == 'darwin'* ]];
             then
                 unset PYENV_VERSION
-                export PYENV_VERSION=3.8.15
+                export PYENV_VERSION=3.8.16
                 echo "Creating Python $PYENV_VERSION venv for macOS."
                 python -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
