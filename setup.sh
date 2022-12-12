@@ -741,7 +741,8 @@ EOL
         then
             if [[ $OSTYPE == 'darwin'* ]];
             then
-                echo "Creating Python 3 venv."
+                pyenv global 3.7
+                echo "Creating Python 3 venv for macOS."
                 python3 -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
@@ -758,7 +759,8 @@ EOL
         else
             if [[ $OSTYPE == 'darwin'* ]];
             then
-                echo "Creating Python 3 venv."
+                pyenv global 3.8
+                echo "Creating Python 3 venv for macOS."
                 python3 -m venv ~/PycharmProjects/$project_dir/venv
                 if [[ $? -ne 0 ]]; then
                     echo "Failed to create venv..."
