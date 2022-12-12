@@ -444,7 +444,7 @@ then
             git ls-remote https://github.com/odoo/odoo.git --quiet
             git ls-remote https://github.com/odoo-ide/odoo-stubs.git --quiet
 
-            git ls-remote https://github.com/odoo/enterprise.git --quiet
+            git ls-remote git@github.com:odoo/enterprise.git --quiet
             if [[ $? -ne 0 ]]; then
                 echo "Failed to authenticate with Github..."
                 if [[ $install_wsl ]]
@@ -454,7 +454,7 @@ then
                     echo "delete credentials which may be conflicting."
                 fi
                 read -p "Press ENTER to try again."
-                git ls-remote https://github.com/odoo/enterprise.git --quiet
+                git ls-remote git@github.com:odoo/enterprise.git --quiet
                 if [[ $? -ne 0 ]]; then
                     read -p "Still failed to authenticate with github."
                 fi
@@ -464,7 +464,7 @@ then
             git clone --quiet https://github.com/odoo/odoo.git --depth 1 -b $project_version ~/PycharmProjects/shared/v$project_version/odoo &
             P1=$!
             echo "Cloning into ~/PycharmProjects/shared/v$project_version/enterprise"
-            git clone --quiet https://github.com/odoo/enterprise.git --depth 1 -b $project_version ~/PycharmProjects/shared/v$project_version/enterprise &
+            git clone --quiet git@github.com:odoo/enterprise.git --depth 1 -b $project_version ~/PycharmProjects/shared/v$project_version/enterprise &
             P2=$!
             if [[ $project_version != "9.0" ]] && [[ $project_version != "10.0" ]]
             then
