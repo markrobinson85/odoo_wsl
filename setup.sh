@@ -884,7 +884,13 @@ EOL
         fi
     
         echo "Preparing Pycharm Idea and Odoo config files..."
-        
+        if [[ $WSL_DISTRO_NAME ]];
+        then
+            pycharm_project_path="$pycharm_project_path"
+        else
+            pycharm_project_path="$HOME/PycharmProjects/"
+        fi
+
         if [[ $project_version != "9.0" ]] && [[ $project_version != "10.0" ]] && [[ ! -f ~/PycharmProjects/$project_dir/.idea/$project_dir.iml ]];
         then
             echo "Creating .iml file at ~/PycharmProjects/$project_dir/.idea/$project_dir.iml"
@@ -942,7 +948,7 @@ EOL
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
-    <option name="SDK_HOME" value="\\\\wsl\$\\$WSL_DISTRO_NAME$HOME/PycharmProjects/$project_dir/venv/bin/python" />
+    <option name="SDK_HOME" value="$pycharm_project_path$project_dir/venv/bin/python" />
     <option name="WORKING_DIRECTORY" value="\$PROJECT_DIR\$" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -972,7 +978,7 @@ EOL
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
-    <option name="SDK_HOME" value="\\\\wsl\$\\$WSL_DISTRO_NAME$HOME/PycharmProjects/$project_dir/venv/bin/python" />
+    <option name="SDK_HOME" value="$pycharm_project_path$project_dir/venv/bin/python" />
     <option name="WORKING_DIRECTORY" value="\$PROJECT_DIR\$" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -1002,7 +1008,7 @@ EOL
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
-    <option name="SDK_HOME" value="\\\\wsl\$\\$WSL_DISTRO_NAME$HOME/PycharmProjects/$project_dir/venv/bin/python" />
+    <option name="SDK_HOME" value="$pycharm_project_path$project_dir/venv/bin/python" />
     <option name="WORKING_DIRECTORY" value="\$PROJECT_DIR\$" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
